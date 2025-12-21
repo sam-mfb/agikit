@@ -167,6 +167,9 @@ function resolveNodes(
       if (targetIndex === -1) {
         // Invalid jump target (e.g., mid-instruction) - create an invalid goto node
         // but continue control flow to the next instruction
+        console.warn(
+          `[WARN]  Invalid jump to ${currentNode.jumpTargetAddress} at ${currentNode.address} (mid-instruction)`,
+        );
         const invalidGotoNode: LogicInvalidGotoNode = {
           type: 'invalidGoto',
           id: currentNode.address.toString(),
