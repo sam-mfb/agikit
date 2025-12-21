@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getAGICommand, agiCommands, AGICommandArgType } from '../AGICommands';
+import { getAGICommand, getAGICommandByName, agiCommands, AGICommandArgType } from '../AGICommands';
 import { AGIVersion } from '../AGIVersion';
 
 describe('AGICommands', () => {
@@ -171,6 +171,94 @@ describe('AGICommands', () => {
         const cmd = getAGICommand(178, agiV3);
         expect(cmd).toBeDefined();
         expect(cmd?.name).toBe('show.mouse');
+      });
+    });
+  });
+
+  describe('getAGICommandByName', () => {
+    // AGI v2.915 - older v2 version
+    const agiV2Old: AGIVersion = { major: 2, minor: 915 };
+    // AGI v2.937+ - newer v2 version
+    const agiV2New: AGIVersion = { major: 2, minor: 937 };
+    // AGI v3 - supports all opcodes with v3 argument counts
+    const agiV3: AGIVersion = { major: 3, minor: 2149 };
+
+    describe('allow.menu', () => {
+      it('should return 0 args for AGI v2', () => {
+        const cmd = getAGICommandByName('allow.menu', agiV2New);
+        expect(cmd).toBeDefined();
+        expect(cmd?.name).toBe('allow.menu');
+        expect(cmd?.argTypes).toEqual([]);
+        expect(cmd?.opcode).toBe(177);
+      });
+
+      it('should return 1 arg for AGI v3', () => {
+        const cmd = getAGICommandByName('allow.menu', agiV3);
+        expect(cmd).toBeDefined();
+        expect(cmd?.name).toBe('allow.menu');
+        expect(cmd?.argTypes).toEqual([AGICommandArgType.Number]);
+        expect(cmd?.opcode).toBe(177);
+      });
+    });
+
+    describe('set.simple', () => {
+      it('should return 0 args for AGI v2', () => {
+        const cmd = getAGICommandByName('set.simple', agiV2Old);
+        expect(cmd).toBeDefined();
+        expect(cmd?.name).toBe('set.simple');
+        expect(cmd?.argTypes).toEqual([]);
+      });
+
+      it('should return 1 arg (String) for AGI v3', () => {
+        const cmd = getAGICommandByName('set.simple', agiV3);
+        expect(cmd).toBeDefined();
+        expect(cmd?.name).toBe('set.simple');
+        expect(cmd?.argTypes).toEqual([AGICommandArgType.String]);
+      });
+    });
+
+    describe('hide.mouse', () => {
+      it('should return 0 args for AGI v2', () => {
+        const cmd = getAGICommandByName('hide.mouse', agiV2New);
+        expect(cmd).toBeDefined();
+        expect(cmd?.argTypes).toEqual([]);
+      });
+
+      it('should return 1 arg for AGI v3', () => {
+        const cmd = getAGICommandByName('hide.mouse', agiV3);
+        expect(cmd).toBeDefined();
+        expect(cmd?.argTypes).toEqual([AGICommandArgType.Number]);
+      });
+    });
+
+    describe('commands without version variants', () => {
+      it('should return same command for both v2 and v3', () => {
+        const cmdV2 = getAGICommandByName('new.room', agiV2Old);
+        const cmdV3 = getAGICommandByName('new.room', agiV3);
+
+        expect(cmdV2).toBeDefined();
+        expect(cmdV3).toBeDefined();
+        expect(cmdV2?.name).toBe('new.room');
+        expect(cmdV3?.name).toBe('new.room');
+        expect(cmdV2?.argTypes).toEqual(cmdV3?.argTypes);
+        expect(cmdV2?.opcode).toBe(cmdV3?.opcode);
+      });
+
+      it('should return return command for both versions', () => {
+        const cmdV2 = getAGICommandByName('return', agiV2Old);
+        const cmdV3 = getAGICommandByName('return', agiV3);
+
+        expect(cmdV2?.name).toBe('return');
+        expect(cmdV3?.name).toBe('return');
+        expect(cmdV2?.argTypes).toEqual([]);
+        expect(cmdV3?.argTypes).toEqual([]);
+      });
+    });
+
+    describe('unknown commands', () => {
+      it('should return undefined for unknown command name', () => {
+        const cmd = getAGICommandByName('nonexistent.command', agiV2Old);
+        expect(cmd).toBeUndefined();
       });
     });
   });

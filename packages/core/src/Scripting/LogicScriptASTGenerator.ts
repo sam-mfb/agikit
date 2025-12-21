@@ -1,4 +1,10 @@
-import { AGICommandArgType, agiCommandsByName, testCommandsByName } from '../Types/AGICommands';
+import {
+  AGICommandArgType,
+  agiCommandsByName,
+  getAGICommandByName,
+  testCommandsByName,
+} from '../Types/AGICommands';
+import { AGIVersion } from '../Types/AGIVersion';
 import {
   LogicASTNode,
   LogicCommandNode,
@@ -50,12 +56,15 @@ export class LogicScriptASTGenerator {
   labels: Map<string, LogicLabel>;
   private statementAddresses: Map<LogicScriptPrimitiveStatement, number>;
   private nodesByAddress: Map<number, LogicASTNode>;
+  private agiVersion: AGIVersion;
 
   constructor(
     parseTree: LogicScriptParseTree<LogicScriptPreprocessedStatement>,
     wordList: WordList,
     objectList: ObjectList,
+    agiVersion: AGIVersion,
   ) {
+    this.agiVersion = agiVersion;
     this.parseTree = new LogicScriptParseTree(
       simplifyLogicScriptProgram(parseTree),
       parseTree.identifiers,
@@ -283,7 +292,7 @@ export class LogicScriptASTGenerator {
         return node;
       }
 
-      const agiCommand = agiCommandsByName[statement.commandName];
+      const agiCommand = getAGICommandByName(statement.commandName, this.agiVersion);
 
       if (!agiCommand) {
         throw new Error(`Unknown command ${statement.commandName}`);

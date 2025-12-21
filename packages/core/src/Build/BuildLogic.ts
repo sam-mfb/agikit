@@ -8,6 +8,7 @@ import { encodeLogic, encodeMessages } from '../Scripting/WriteLogic';
 import { WordList } from '../Types/WordList';
 import { ObjectList } from '../Types/ObjectList';
 import { getDiagnosticsForProgram, LogicDiagnostic } from '../Scripting/LogicDiagnostics';
+import { AGIVersion } from '../Types/AGIVersion';
 
 export class LogicCompilerError extends Error {
   scriptPath: string;
@@ -50,16 +51,17 @@ export function compileLogicScript(
   wordList: WordList,
   objectList: ObjectList,
   encryptMessages: boolean,
-  encoding: string = 'ascii',
+  encoding: string,
+  agiVersion: AGIVersion,
 ): [Buffer, LogicDiagnostic[]] {
   const rawProgram = parseLogicScriptRaw(sourceCode, scriptPath);
-  const diagnostics = getDiagnosticsForProgram(rawProgram);
+  const diagnostics = getDiagnosticsForProgram(rawProgram, agiVersion);
   if (diagnostics.some((diagnostic) => diagnostic.severity === 'error')) {
     throw new LogicCompilerError(scriptPath, diagnostics);
   }
 
   const parseTree = parseLogicScript(rawProgram, scriptPath);
-  const astGenerator = new LogicScriptASTGenerator(parseTree, wordList, objectList);
+  const astGenerator = new LogicScriptASTGenerator(parseTree, wordList, objectList, agiVersion);
   const root = astGenerator.generateASTForLogicScript();
   const graph = optimizeAST(root);
   const compiler = new LogicCompiler(graph, astGenerator.getLabels());

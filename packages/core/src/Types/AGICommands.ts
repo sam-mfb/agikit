@@ -55,6 +55,23 @@ for (const [opcode, cmds] of agiCommandsByOpcodeGrouped) {
   });
 }
 
+// Group commands by name for version-aware lookup
+const agiCommandsByNameGrouped: Map<string, AGICommand[]> = new Map();
+for (const cmd of agiCommands) {
+  const existing = agiCommandsByNameGrouped.get(cmd.name) ?? [];
+  existing.push(cmd);
+  agiCommandsByNameGrouped.set(cmd.name, existing);
+}
+
+// Sort each group by version descending (highest first, unversioned last)
+for (const [, cmds] of agiCommandsByNameGrouped) {
+  cmds.sort((a, b) => {
+    const aVer = a.version?.major ?? 0;
+    const bVer = b.version?.major ?? 0;
+    return bVer - aVer;
+  });
+}
+
 // For name-based lookup, prefer versioned commands (they're more specific)
 export const agiCommandsByName: Record<string, AGICommand> = keyBy(
   [...agiCommands].sort((a, b) => (b.version?.major ?? 0) - (a.version?.major ?? 0)),
@@ -112,4 +129,24 @@ export function getAGICommand(opcode: number, agiVersion: AGIVersion): AGIComman
 
 export function getTestCommand(opcode: number): TestCommand | undefined {
   return testCommandsByOpcode[opcode];
+}
+
+export function getAGICommandByName(
+  name: string,
+  agiVersion: AGIVersion,
+): AGICommand | undefined {
+  const candidates = agiCommandsByNameGrouped.get(name);
+  if (!candidates || candidates.length === 0) {
+    return undefined;
+  }
+
+  // Candidates are pre-sorted by version descending
+  // Find first command where version requirement is met
+  for (const cmd of candidates) {
+    if (!cmd.version || agiVersion.major >= cmd.version.major) {
+      return cmd;
+    }
+  }
+
+  return undefined;
 }
