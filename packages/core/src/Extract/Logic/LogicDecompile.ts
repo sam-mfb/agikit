@@ -153,17 +153,11 @@ function resolveNodes(
 
     if (!target) {
       const targetIndex = unresolvedNodes.findIndex(
-        (unresolvedNode) => unresolvedNode.address >= currentNode.jumpTargetAddress,
+        (unresolvedNode) => unresolvedNode.address === currentNode.jumpTargetAddress,
       );
       if (targetIndex === -1) {
         throw new Error(
           `Invalid jump to ${currentNode.jumpTargetAddress} at ${currentNode.address}`,
-        );
-      }
-      const actualAddress = unresolvedNodes[targetIndex].address;
-      if (actualAddress !== currentNode.jumpTargetAddress) {
-        console.warn(
-          `[WARN] Jump target ${currentNode.jumpTargetAddress} snapped to ${actualAddress} (from address ${currentNode.address})`,
         );
       }
       target = resolveNodes(unresolvedNodes, targetIndex, labels, workingIndex);
