@@ -916,5 +916,53 @@
     "name": "release.key",
     "argTypes": [],
     "opcode": 181
+  },
+  {
+    "name": "set.simple",
+    "argTypes": ["String"],
+    "opcode": 170,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "set.pri.base",
+    "argTypes": ["Number"],
+    "opcode": 174,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "discard.sound",
+    "argTypes": ["Number"],
+    "opcode": 175,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "hide.mouse",
+    "argTypes": ["Number"],
+    "opcode": 176,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "allow.menu",
+    "argTypes": ["Number"],
+    "opcode": 177,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "show.mouse",
+    "argTypes": ["Number"],
+    "opcode": 178,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "fence.mouse",
+    "argTypes": ["Number", "Number", "Number", "Number"],
+    "opcode": 179,
+    "version": { "major": 3 }
+  },
+  {
+    "name": "mouse.posn",
+    "argTypes": ["Number", "Number"],
+    "opcode": 180,
+    "version": { "major": 3 }
   }
 ]
