@@ -38,7 +38,16 @@ export type LogicGotoNode = {
   metadata?: LogicASTNodeMetadata;
 };
 
-export type LogicASTNode = LogicIfNode | LogicGotoNode | LogicCommandNode;
+export type LogicInvalidGotoNode = {
+  type: 'invalidGoto';
+  id: string;
+  invalidTargetAddress: number;
+  next?: LogicASTNode;
+  label?: LogicLabel;
+  metadata?: LogicASTNodeMetadata;
+};
+
+export type LogicASTNode = LogicIfNode | LogicGotoNode | LogicInvalidGotoNode | LogicCommandNode;
 
 type UnresolvedIfNode = {
   type: 'unresolvedIf';
@@ -156,9 +165,28 @@ function resolveNodes(
         (unresolvedNode) => unresolvedNode.address === currentNode.jumpTargetAddress,
       );
       if (targetIndex === -1) {
-        throw new Error(
-          `Invalid jump to ${currentNode.jumpTargetAddress} at ${currentNode.address}`,
-        );
+        // Invalid jump target (e.g., mid-instruction) - create an invalid goto node
+        // but continue control flow to the next instruction
+        const invalidGotoNode: LogicInvalidGotoNode = {
+          type: 'invalidGoto',
+          id: currentNode.address.toString(),
+          invalidTargetAddress: currentNode.jumpTargetAddress,
+          label: labels.get(currentNode.address),
+          metadata: {
+            instructionAddress: currentNode.address,
+          },
+        };
+        workingIndex.set(currentNode.address, invalidGotoNode);
+        // Continue to next instruction (the goto is essentially dead code)
+        if (currentNodeIndex + 1 < unresolvedNodes.length) {
+          invalidGotoNode.next = resolveNodes(
+            unresolvedNodes,
+            currentNodeIndex + 1,
+            labels,
+            workingIndex,
+          );
+        }
+        return invalidGotoNode;
       }
       target = resolveNodes(unresolvedNodes, targetIndex, labels, workingIndex);
     }

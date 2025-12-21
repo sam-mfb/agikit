@@ -581,6 +581,34 @@ export class LogicScriptGenerator {
     queue: BasicBlock[],
   ): LogicScriptStatement[] {
     const preamble = this.generatePreamble(block);
+
+    // Handle invalid goto blocks - output as a comment but continue control flow
+    if (block.metadata.invalidGotoNode) {
+      const targetAddress = block.metadata.invalidGotoNode.invalidTargetAddress;
+      const comment: LogicScriptStatement = {
+        type: 'Comment',
+        comment: ` INVALID GOTO: target address ${targetAddress} (mid-instruction)`,
+      };
+
+      // Continue to next block (the code after the invalid goto)
+      if (block.next) {
+        if (this.dominates(block, block.next.to) && this.postDominates(block.next.to, block)) {
+          const nextBlockCode = this.generateCodeForBasicBlock(block.next.to, queue);
+          return [...preamble, comment, ...nextBlockCode];
+        }
+
+        const nextBlockLabel = this.findBasicBlockLabel(block.next.to);
+        if (nextBlockLabel) {
+          queue.push(block.next.to);
+          if (this.visited.has(block.next.to)) {
+            return [...preamble, comment, this.generateGoto(nextBlockLabel)];
+          }
+        }
+      }
+
+      return [...preamble, comment];
+    }
+
     if (block.next) {
       if (this.dominates(block, block.next.to) && this.postDominates(block.next.to, block)) {
         const nextBlockCode = this.generateCodeForBasicBlock(block.next.to, queue);
