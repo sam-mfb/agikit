@@ -1,5 +1,6 @@
 import assertNever from 'assert-never';
 import { max } from 'lodash';
+import { Logger } from '../../Logger';
 import { LogicConditionClause, LogicCommand, LogicInstruction } from '../../Types/Logic';
 import { generateLabels } from './LogicDisasm';
 
@@ -95,6 +96,7 @@ function resolveNodes(
   currentNodeIndex: number,
   labels: Map<number, LogicLabel>,
   nodeIndex?: Map<number, LogicASTNode>,
+  logger?: Logger,
 ): LogicASTNode {
   const workingIndex = nodeIndex ?? new Map<number, LogicASTNode>();
   const currentNode = unresolvedNodes[currentNodeIndex];
@@ -115,7 +117,7 @@ function resolveNodes(
     };
     workingIndex.set(currentNode.address, commandNode);
     if (currentNode.agiCommand.name !== 'return' && currentNodeIndex + 1 < unresolvedNodes.length) {
-      commandNode.next = resolveNodes(unresolvedNodes, currentNodeIndex + 1, labels, workingIndex);
+      commandNode.next = resolveNodes(unresolvedNodes, currentNodeIndex + 1, labels, workingIndex, logger);
     }
     return commandNode;
   }
@@ -141,7 +143,7 @@ function resolveNodes(
     };
     workingIndex.set(currentNode.address, ifNode);
     if (currentNodeIndex + 1 < unresolvedNodes.length) {
-      ifNode.then = resolveNodes(unresolvedNodes, currentNodeIndex + 1, labels, workingIndex);
+      ifNode.then = resolveNodes(unresolvedNodes, currentNodeIndex + 1, labels, workingIndex, logger);
     }
 
     // insert a virtual goto at the end of the code for the skip target
@@ -152,7 +154,7 @@ function resolveNodes(
       address: gotoNodeAddress,
       jumpTargetAddress: currentNode.elseGotoAddress,
     });
-    ifNode.else = resolveNodes(unresolvedNodes, gotoNodeIndex, labels, workingIndex);
+    ifNode.else = resolveNodes(unresolvedNodes, gotoNodeIndex, labels, workingIndex, logger);
 
     return ifNode;
   }
@@ -167,8 +169,8 @@ function resolveNodes(
       if (targetIndex === -1) {
         // Invalid jump target (e.g., mid-instruction) - create an invalid goto node
         // but continue control flow to the next instruction
-        console.warn(
-          `[WARN]  Invalid jump to ${currentNode.jumpTargetAddress} at ${currentNode.address} (mid-instruction)`,
+        logger?.warn(
+          `Invalid jump to ${currentNode.jumpTargetAddress} at ${currentNode.address} (mid-instruction)`,
         );
         const invalidGotoNode: LogicInvalidGotoNode = {
           type: 'invalidGoto',
@@ -187,11 +189,12 @@ function resolveNodes(
             currentNodeIndex + 1,
             labels,
             workingIndex,
+            logger,
           );
         }
         return invalidGotoNode;
       }
-      target = resolveNodes(unresolvedNodes, targetIndex, labels, workingIndex);
+      target = resolveNodes(unresolvedNodes, targetIndex, labels, workingIndex, logger);
     }
 
     const gotoNode: LogicGotoNode = {
@@ -210,11 +213,14 @@ function resolveNodes(
   assertNever(currentNode);
 }
 
-export function decompileInstructions(instructions: LogicInstruction[]): LogicASTNode {
+export function decompileInstructions(
+  instructions: LogicInstruction[],
+  logger?: Logger,
+): LogicASTNode {
   const labels = new Map<number, LogicLabel>(
     generateLabels(instructions).map((label) => [label.address, label]),
   );
   const unresolvedNodes = instructions.map((instruction) => decompileInstruction(instruction));
-  const rootNode = resolveNodes(unresolvedNodes, 0, labels);
+  const rootNode = resolveNodes(unresolvedNodes, 0, labels, undefined, logger);
   return rootNode;
 }

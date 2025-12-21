@@ -1,4 +1,5 @@
 import assertNever from 'assert-never';
+import { Logger } from '../../Logger';
 import { getGotoTargetLabel, LogicScriptParseTree } from '../../Scripting/LogicScriptParser';
 import {
   generateLogicScript,
@@ -723,8 +724,9 @@ export class LogicScriptGenerator {
 export function generateCodeForLogicProgram(
   logic: LogicProgram,
   wordList: WordList,
+  logger?: Logger,
 ): [string, BasicBlockGraph] {
-  const root = decompileInstructions(logic.instructions);
+  const root = decompileInstructions(logic.instructions, logger);
   const optimizedRoot = optimizeAST(root);
   const scriptGenerator = new LogicScriptGenerator(optimizedRoot, { logic, wordList });
   return [scriptGenerator.generateCode() + '\n\n' + generateLogicMessages(logic), optimizedRoot];
