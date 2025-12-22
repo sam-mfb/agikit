@@ -11,6 +11,8 @@ The features that have been added to it beyond the original agikit are:
 - Compiling with encoded text (for non ascii languages)
 - Decompiling individual views (and recompiling with encoded descriptions)
 - Decompiling individual pics (and recompiling)
+- Support for AGIv3 opcodes
+- Improved handling of gotos and orphan labels
 
 ## Background
 

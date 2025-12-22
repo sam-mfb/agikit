@@ -202,6 +202,7 @@ export class ProjectBuilder {
           objectList,
           false,
           this.encoding,
+          this.project.config.agiVersion,
         );
         const compressedData = agiLzwCompress(unencryptedData);
         if (compressedData.byteLength < unencryptedData.byteLength) {
@@ -209,7 +210,15 @@ export class ProjectBuilder {
         }
       }
 
-      return compileLogicScript(input, scriptPath, wordList, objectList, true, this.encoding);
+      return compileLogicScript(
+        input,
+        scriptPath,
+        wordList,
+        objectList,
+        true,
+        this.encoding,
+        this.project.config.agiVersion,
+      );
     }, scriptPath);
 
     diagnostics.forEach((diagnostic) =>

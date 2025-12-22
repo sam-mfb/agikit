@@ -1,4 +1,10 @@
-import { LogicASTNode, LogicCommandNode, LogicGotoNode, LogicIfNode } from './LogicDecompile';
+import {
+  LogicASTNode,
+  LogicCommandNode,
+  LogicGotoNode,
+  LogicIfNode,
+  LogicInvalidGotoNode,
+} from './LogicDecompile';
 import { BasicBlock, replaceEdge, removeEdge, BasicBlockGraph } from './ControlFlowAnalysis';
 import { NodeVisitor } from '../Graphs';
 
@@ -8,6 +14,10 @@ export type BlockVisitor = (...params: Parameters<NodeVisitor<BasicBlock>>) => {
 
 export const removeEmptyBlock: BlockVisitor = (block) => {
   if (block.type === 'singlePathBasicBlock' && block.next && block.commands.length === 0) {
+    // Don't remove blocks that have an invalidGotoNode - we need to preserve the comment
+    if (block.metadata.invalidGotoNode) {
+      return { changed: false };
+    }
     const target = block.next.to;
     block.entryPoints.forEach((entryEdge) => {
       replaceEdge(entryEdge, target);
@@ -20,9 +30,17 @@ export const removeEmptyBlock: BlockVisitor = (block) => {
 
 export const concatenateLinearBlocks: BlockVisitor = (block) => {
   if (block.type === 'singlePathBasicBlock' && block.entryPoints.size === 1) {
+    // Don't merge blocks that have an invalidGotoNode - we need to preserve the comment
+    if (block.metadata.invalidGotoNode) {
+      return { changed: false };
+    }
     const inwardEdge = [...block.entryPoints.values()][0];
     const previousBlock = inwardEdge.from;
     if (previousBlock.type === 'singlePathBasicBlock') {
+      // Don't merge into a block that has an invalidGotoNode
+      if (previousBlock.metadata.invalidGotoNode) {
+        return { changed: false };
+      }
       previousBlock.commands.push(...block.commands);
       if (block.next) {
         replaceEdge(inwardEdge, block.next.to);
@@ -84,6 +102,23 @@ export function buildASTFromBasicBlocks(
   }
 
   if (rootBlock.type === 'singlePathBasicBlock') {
+    // Handle invalid goto blocks - output comment but continue control flow
+    if (rootBlock.metadata.invalidGotoNode) {
+      const invalidGotoNode: LogicInvalidGotoNode = {
+        type: 'invalidGoto',
+        id: rootBlock.id,
+        invalidTargetAddress: rootBlock.metadata.invalidGotoNode.invalidTargetAddress,
+        label: rootBlock.label,
+        metadata: rootBlock.metadata.invalidGotoNode.metadata,
+      };
+      workingIndex.set(rootBlock, invalidGotoNode);
+      // Continue to next block if present
+      if (rootBlock.next) {
+        invalidGotoNode.next = findOrBuildNodeForBlock(rootBlock.next.to);
+      }
+      return invalidGotoNode;
+    }
+
     if (!rootBlock.next) {
       return undefined;
     }

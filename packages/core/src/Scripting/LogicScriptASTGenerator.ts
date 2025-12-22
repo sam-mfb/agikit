@@ -1,4 +1,10 @@
-import { AGICommandArgType, agiCommandsByName, testCommandsByName } from '../Types/AGICommands';
+import {
+  AGICommandArgType,
+  agiCommandsByName,
+  getAGICommandByName,
+  testCommandsByName,
+} from '../Types/AGICommands';
+import { AGIVersion } from '../Types/AGIVersion';
 import {
   LogicASTNode,
   LogicCommandNode,
@@ -50,12 +56,15 @@ export class LogicScriptASTGenerator {
   labels: Map<string, LogicLabel>;
   private statementAddresses: Map<LogicScriptPrimitiveStatement, number>;
   private nodesByAddress: Map<number, LogicASTNode>;
+  private agiVersion: AGIVersion;
 
   constructor(
     parseTree: LogicScriptParseTree<LogicScriptPreprocessedStatement>,
     wordList: WordList,
     objectList: ObjectList,
+    agiVersion: AGIVersion,
   ) {
+    this.agiVersion = agiVersion;
     this.parseTree = new LogicScriptParseTree(
       simplifyLogicScriptProgram(parseTree),
       parseTree.identifiers,
@@ -92,6 +101,36 @@ export class LogicScriptASTGenerator {
         }
       }
 
+      return false;
+    });
+
+    // Pre-register all labels to handle orphan blocks that are only reachable via goto.
+    // Without this, labels in orphan blocks wouldn't be registered because the AST
+    // generation follows control flow and skips unreachable code.
+    this.parseTree.dfsStatements((statement, stack) => {
+      if (statement.type === 'Label') {
+        // Find the next non-Label/Comment/MessageDirective statement in the same list
+        const statementList = stack[0];
+        const labelIndex = statementList.indexOf(statement);
+        for (let i = labelIndex + 1; i < statementList.length; i++) {
+          const nextStmt = statementList[i];
+          if (
+            nextStmt.type !== 'Label' &&
+            nextStmt.type !== 'Comment' &&
+            nextStmt.type !== 'MessageDirective'
+          ) {
+            const nextAddress = this.statementAddresses.get(nextStmt);
+            if (nextAddress != null) {
+              this.labels.set(statement.label, {
+                label: statement.label,
+                address: nextAddress,
+                references: [],
+              });
+            }
+            break;
+          }
+        }
+      }
       return false;
     });
   }
@@ -283,7 +322,7 @@ export class LogicScriptASTGenerator {
         return node;
       }
 
-      const agiCommand = agiCommandsByName[statement.commandName];
+      const agiCommand = getAGICommandByName(statement.commandName, this.agiVersion);
 
       if (!agiCommand) {
         throw new Error(`Unknown command ${statement.commandName}`);
@@ -362,6 +401,11 @@ export class LogicScriptASTGenerator {
       throw new Error('Empty script');
     }
 
+    // Process orphan blocks - code that's only reachable via goto, not via fall-through.
+    // These blocks weren't visited during the main traversal because control flow
+    // doesn't reach them (they follow unconditional gotos or returns).
+    this.processOrphanBlocks();
+
     this.unresolvedGotos.forEach((unresolvedGoto) => {
       const label = this.labels.get(unresolvedGoto.label);
       if (label == null) {
@@ -375,6 +419,29 @@ export class LogicScriptASTGenerator {
     });
 
     return root;
+  }
+
+  private processOrphanBlocks(): void {
+    // Find labels whose addresses don't have AST nodes yet
+    this.parseTree.dfsStatements((statement, stack) => {
+      if (statement.type === 'Label') {
+        const label = this.labels.get(statement.label);
+        if (label && !this.nodesByAddress.has(label.address)) {
+          // Find the statements starting from this label
+          const statementList = stack[0];
+          const labelIndex = statementList.indexOf(statement);
+          const statementsFromLabel = statementList.slice(labelIndex);
+
+          // Generate AST for these orphan statements
+          this.generateASTForLogicScriptStatements(
+            statementsFromLabel,
+            undefined, // The label will be processed as the first statement
+            stack,
+          );
+        }
+      }
+      return false;
+    });
   }
 
   getLabels(): LogicLabel[] {

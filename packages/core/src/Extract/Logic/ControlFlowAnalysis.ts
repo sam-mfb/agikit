@@ -7,6 +7,7 @@ import {
   LogicLabel,
   LogicCommandNode,
   LogicGotoNode,
+  LogicInvalidGotoNode,
   LogicIfNode,
   LogicASTNode,
 } from './LogicDecompile';
@@ -30,6 +31,7 @@ export type SinglePathBasicBlock = BasicBlockCommon & {
   next?: NextBasicBlockEdge;
   metadata: {
     gotoNode?: LogicGotoNode;
+    invalidGotoNode?: LogicInvalidGotoNode;
   };
 };
 
@@ -345,6 +347,36 @@ function buildBasicBlocks(
     }
 
     return ifExitBlock;
+  }
+
+  if (node.type === 'invalidGoto') {
+    // Invalid gotos output a comment but control flow continues to next instruction
+    const invalidGotoBlock: SinglePathBasicBlock = {
+      type: 'singlePathBasicBlock',
+      id: node.id,
+      commands: [],
+      entryPoints: new Set<BasicBlockEdge>(),
+      label: node.label,
+      metadata: {
+        invalidGotoNode: node,
+      },
+    };
+
+    workingIndex.set(node, invalidGotoBlock);
+
+    // Continue to next instruction if present
+    if (node.next) {
+      const nextBlock = findOrBuildBlocksForNode(node.next);
+      const nextEdge: NextBasicBlockEdge = {
+        type: 'next',
+        from: invalidGotoBlock,
+        to: nextBlock,
+      };
+      invalidGotoBlock.next = nextEdge;
+      nextBlock.entryPoints.add(nextEdge);
+    }
+
+    return invalidGotoBlock;
   }
 
   assertNever(node);

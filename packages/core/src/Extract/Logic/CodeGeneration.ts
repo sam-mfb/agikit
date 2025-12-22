@@ -1,4 +1,5 @@
 import assertNever from 'assert-never';
+import { Logger } from '../../Logger';
 import { getGotoTargetLabel, LogicScriptParseTree } from '../../Scripting/LogicScriptParser';
 import {
   generateLogicScript,
@@ -354,6 +355,10 @@ export class LogicScriptGenerator {
     const statements = [];
 
     while (queue.length > 0) {
+      // Sort queue by address to ensure blocks are processed in bytecode order
+      // This prevents orphan blocks from being placed after return() statements
+      queue.sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
+
       const block = queue.shift();
       if (!block || this.visited.has(block)) {
         continue;
@@ -581,6 +586,34 @@ export class LogicScriptGenerator {
     queue: BasicBlock[],
   ): LogicScriptStatement[] {
     const preamble = this.generatePreamble(block);
+
+    // Handle invalid goto blocks - output as a comment but continue control flow
+    if (block.metadata.invalidGotoNode) {
+      const targetAddress = block.metadata.invalidGotoNode.invalidTargetAddress;
+      const comment: LogicScriptStatement = {
+        type: 'Comment',
+        comment: ` INVALID GOTO: target address ${targetAddress} (mid-instruction)`,
+      };
+
+      // Continue to next block (the code after the invalid goto)
+      if (block.next) {
+        if (this.dominates(block, block.next.to) && this.postDominates(block.next.to, block)) {
+          const nextBlockCode = this.generateCodeForBasicBlock(block.next.to, queue);
+          return [...preamble, comment, ...nextBlockCode];
+        }
+
+        const nextBlockLabel = this.findBasicBlockLabel(block.next.to);
+        if (nextBlockLabel) {
+          queue.push(block.next.to);
+          if (this.visited.has(block.next.to)) {
+            return [...preamble, comment, this.generateGoto(nextBlockLabel)];
+          }
+        }
+      }
+
+      return [...preamble, comment];
+    }
+
     if (block.next) {
       if (this.dominates(block, block.next.to) && this.postDominates(block.next.to, block)) {
         const nextBlockCode = this.generateCodeForBasicBlock(block.next.to, queue);
@@ -590,9 +623,9 @@ export class LogicScriptGenerator {
       const nextBlockLabel = this.findBasicBlockLabel(block.next.to);
       if (nextBlockLabel) {
         queue.push(block.next.to);
-        if (this.visited.has(block.next.to)) {
-          return [...preamble, this.generateGoto(nextBlockLabel)];
-        }
+        // Always add goto when not inlining to prevent fall-through to orphan blocks.
+        // The removeRedundantJumps() cleanup pass will remove unnecessary gotos.
+        return [...preamble, this.generateGoto(nextBlockLabel)];
       }
     }
 
@@ -695,8 +728,9 @@ export class LogicScriptGenerator {
 export function generateCodeForLogicProgram(
   logic: LogicProgram,
   wordList: WordList,
+  logger?: Logger,
 ): [string, BasicBlockGraph] {
-  const root = decompileInstructions(logic.instructions);
+  const root = decompileInstructions(logic.instructions, logger);
   const optimizedRoot = optimizeAST(root);
   const scriptGenerator = new LogicScriptGenerator(optimizedRoot, { logic, wordList });
   return [scriptGenerator.generateCode() + '\n\n' + generateLogicMessages(logic), optimizedRoot];

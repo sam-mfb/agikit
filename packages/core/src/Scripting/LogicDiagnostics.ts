@@ -1,5 +1,6 @@
 import flatMap from 'lodash/flatMap';
-import { agiCommandsByName } from '../Types/AGICommands';
+import { getAGICommandByName } from '../Types/AGICommands';
+import { AGIVersion } from '../Types/AGIVersion';
 import { LogicScriptProgram, LogicScriptStatement } from './LogicScriptParserTypes';
 
 type LogicScriptDiagnosticType = 'UnknownCommandName' | 'WrongNumberOfArguments';
@@ -11,11 +12,14 @@ export type LogicDiagnostic = {
   message: string;
 };
 
-export function getDiagnosticsForStatement(statement: LogicScriptStatement): LogicDiagnostic[] {
+export function getDiagnosticsForStatement(
+  statement: LogicScriptStatement,
+  agiVersion: AGIVersion,
+): LogicDiagnostic[] {
   const diagnostics: LogicDiagnostic[] = [];
 
   if (statement.type === 'CommandCall') {
-    const command = agiCommandsByName[statement.commandName];
+    const command = getAGICommandByName(statement.commandName, agiVersion);
     if (command == null) {
       if (statement.commandName !== 'goto') {
         diagnostics.push({
@@ -37,8 +41,8 @@ export function getDiagnosticsForStatement(statement: LogicScriptStatement): Log
     }
   } else if (statement.type === 'IfStatement') {
     diagnostics.push(
-      ...getDiagnosticsForProgram(statement.thenStatements),
-      ...getDiagnosticsForProgram(statement.elseStatements),
+      ...getDiagnosticsForProgram(statement.thenStatements, agiVersion),
+      ...getDiagnosticsForProgram(statement.elseStatements, agiVersion),
     );
   }
 
@@ -47,6 +51,7 @@ export function getDiagnosticsForStatement(statement: LogicScriptStatement): Log
 
 export function getDiagnosticsForProgram(
   program: LogicScriptProgram<LogicScriptStatement>,
+  agiVersion: AGIVersion,
 ): LogicDiagnostic[] {
-  return flatMap(program, (statement) => getDiagnosticsForStatement(statement));
+  return flatMap(program, (statement) => getDiagnosticsForStatement(statement, agiVersion));
 }

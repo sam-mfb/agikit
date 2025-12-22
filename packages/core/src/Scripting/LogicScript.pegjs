@@ -257,7 +257,7 @@ ParenthesizedBooleanExpression = '(' WSC* expression:BooleanExpression WSC* ')' 
 
 IfStatement
   = ifKeyword:IfToken WSC* conditions:ParenthesizedBooleanExpression WSC* '{'
-    thenStatements:StatementList
+    WSC* thenStatements:StatementList WSC*
     '}'
     elseClause:ElseClause? {
       return {

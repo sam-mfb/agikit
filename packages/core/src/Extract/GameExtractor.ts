@@ -136,7 +136,7 @@ export class GameExtractor {
         );
       }
 
-      const [code, basicBlockGraph] = generateCodeForLogicProgram(logic, wordList);
+      const [code, basicBlockGraph] = generateCodeForLogicProgram(logic, wordList, this.logger);
       writeFileSync(destPath, code);
       if (this.options?.decompilerDebug) {
         writeFileSync(
