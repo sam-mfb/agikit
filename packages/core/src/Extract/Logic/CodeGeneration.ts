@@ -355,6 +355,10 @@ export class LogicScriptGenerator {
     const statements = [];
 
     while (queue.length > 0) {
+      // Sort queue by address to ensure blocks are processed in bytecode order
+      // This prevents orphan blocks from being placed after return() statements
+      queue.sort((a, b) => parseInt(a.id, 10) - parseInt(b.id, 10));
+
       const block = queue.shift();
       if (!block || this.visited.has(block)) {
         continue;
@@ -619,9 +623,9 @@ export class LogicScriptGenerator {
       const nextBlockLabel = this.findBasicBlockLabel(block.next.to);
       if (nextBlockLabel) {
         queue.push(block.next.to);
-        if (this.visited.has(block.next.to)) {
-          return [...preamble, this.generateGoto(nextBlockLabel)];
-        }
+        // Always add goto when not inlining to prevent fall-through to orphan blocks.
+        // The removeRedundantJumps() cleanup pass will remove unnecessary gotos.
+        return [...preamble, this.generateGoto(nextBlockLabel)];
       }
     }
 
