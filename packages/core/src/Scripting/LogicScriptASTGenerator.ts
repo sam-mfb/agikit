@@ -56,7 +56,6 @@ export class LogicScriptASTGenerator {
   labels: Map<string, LogicLabel>;
   private statementAddresses: Map<LogicScriptPrimitiveStatement, number>;
   private nodesByAddress: Map<number, LogicASTNode>;
-  private statementsByAddress: Map<number, LogicScriptPrimitiveStatement>;
   private agiVersion: AGIVersion;
 
   constructor(
@@ -88,29 +87,12 @@ export class LogicScriptASTGenerator {
 
     this.statementAddresses = new Map<LogicScriptPrimitiveStatement, number>();
     this.nodesByAddress = new Map<number, LogicASTNode>();
-    this.statementsByAddress = new Map<number, LogicScriptPrimitiveStatement>();
     this.messages = [];
     this.messagesByContent = new Map<string, number>();
     let address = 1;
-    let pendingLabels: string[] = [];
     this.parseTree.dfsStatements((statement) => {
       this.statementAddresses.set(statement, address);
-      this.statementsByAddress.set(address, statement);
-
-      // Pre-register labels so they're available even if they appear after return()
-      if (statement.type === 'Label') {
-        pendingLabels.push(statement.label);
-      } else if (statement.type !== 'Comment' && statement.type !== 'MessageDirective') {
-        // Register pending labels with this statement's address
-        for (const labelName of pendingLabels) {
-          this.labels.set(labelName, {
-            label: labelName,
-            address,
-            references: [],
-          });
-        }
-        pendingLabels = [];
-      }
+      address += 10;
 
       if (statement.type === 'MessageDirective') {
         this.messages[statement.number.value - 1] = statement.message.value;
@@ -119,34 +101,8 @@ export class LogicScriptASTGenerator {
         }
       }
 
-      address += 10;
       return false;
     });
-  }
-
-  // Find a statement in any statement list (including nested if/else blocks)
-  // Returns the list containing the statement and the stack for context
-  private findStatementLocation(
-    statement: LogicScriptPrimitiveStatement,
-    statements: LogicScriptPrimitiveStatement[] = this.parseTree.program,
-    stack: LogicScriptStatementStack<LogicScriptPrimitiveStatement> = [this.parseTree.program],
-  ): { statements: LogicScriptPrimitiveStatement[]; stack: LogicScriptStatementStack<LogicScriptPrimitiveStatement>; index: number } | undefined {
-    const index = statements.indexOf(statement);
-    if (index !== -1) {
-      return { statements, stack, index };
-    }
-
-    // Search in nested if/else blocks
-    for (const stmt of statements) {
-      if (stmt.type === 'IfStatement') {
-        const thenResult = this.findStatementLocation(statement, stmt.thenStatements, [stmt.thenStatements, ...stack]);
-        if (thenResult) return thenResult;
-        const elseResult = this.findStatementLocation(statement, stmt.elseStatements, [stmt.elseStatements, ...stack]);
-        if (elseResult) return elseResult;
-      }
-    }
-
-    return undefined;
   }
 
   private getMessageNumber(message: string): number {
@@ -413,32 +369,6 @@ export class LogicScriptASTGenerator {
     ]);
     if (root == null) {
       throw new Error('Empty script');
-    }
-
-    // Process orphan code blocks (code after return()/goto() that's only reachable via goto)
-    // Keep processing until all labels have corresponding nodes
-    let processedOrphans = true;
-    while (processedOrphans) {
-      processedOrphans = false;
-      for (const [labelName, label] of this.labels) {
-        if (!this.nodesByAddress.has(label.address)) {
-          // Find the statement at this address
-          const statement = this.statementsByAddress.get(label.address);
-          if (statement) {
-            // Find this statement in any statement list (including nested blocks)
-            const location = this.findStatementLocation(statement);
-            if (location) {
-              // Generate AST for this orphan block
-              this.generateASTForLogicScriptStatements(
-                location.statements.slice(location.index),
-                undefined,
-                location.stack,
-              );
-              processedOrphans = true;
-            }
-          }
-        }
-      }
     }
 
     this.unresolvedGotos.forEach((unresolvedGoto) => {
