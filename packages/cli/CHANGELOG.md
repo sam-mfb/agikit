@@ -1,6 +1,11 @@
 # Change Log - @agikit-slim/cli
 
-This log was last generated on Fri, 21 Nov 2025 11:04:23 GMT and should not be manually modified.
+This log was last generated on Mon, 22 Dec 2025 14:13:24 GMT and should not be manually modified.
+
+## 1.2.1
+Mon, 22 Dec 2025 14:13:24 GMT
+
+_Version update only_
 
 ## 1.2.0
 Fri, 21 Nov 2025 11:04:23 GMT

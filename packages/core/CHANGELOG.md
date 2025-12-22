@@ -1,6 +1,13 @@
 # Change Log - @agikit-slim/core
 
-This log was last generated on Wed, 19 Nov 2025 04:01:13 GMT and should not be manually modified.
+This log was last generated on Mon, 22 Dec 2025 14:13:24 GMT and should not be manually modified.
+
+## 1.2.0
+Mon, 22 Dec 2025 14:13:24 GMT
+
+### Minor changes
+
+- Improve logic extraction and building for AGIv3 games
 
 ## 1.1.0
 Wed, 19 Nov 2025 04:01:13 GMT
