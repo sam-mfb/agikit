@@ -105,7 +105,10 @@ const testCommandsByOpcode = keyBy(testCommands, (cmd) => cmd.opcode);
  * - positive if a > b
  * Unversioned (undefined) is treated as the lowest version (fallback)
  */
-function compareVersions(a: AGICommandVersion | undefined, b: AGICommandVersion | undefined): number {
+function compareVersions(
+  a: AGICommandVersion | undefined,
+  b: AGICommandVersion | undefined,
+): number {
   // Unversioned commands come last (lowest priority)
   if (!a && !b) return 0;
   if (!a) return -1; // a is unversioned, comes after b
