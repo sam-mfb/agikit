@@ -683,6 +683,12 @@
     "opcode": 134
   },
   {
+    "name": "quit",
+    "argTypes": [],
+    "opcode": 134,
+    "maxVersion": { "major": 2, "minor": 89 }
+  },
+  {
     "name": "show.mem",
     "argTypes": [],
     "opcode": 135
@@ -768,9 +774,21 @@
     "opcode": 151
   },
   {
+    "name": "print.at",
+    "argTypes": ["Message", "Number"],
+    "opcode": 151,
+    "maxVersion": { "major": 2, "minor": 399 }
+  },
+  {
     "name": "print.at.v",
     "argTypes": ["Message", "Variable", "Variable", "Variable"],
     "opcode": 152
+  },
+  {
+    "name": "print.at.v",
+    "argTypes": ["Message", "Variable"],
+    "opcode": 152,
+    "maxVersion": { "major": 2, "minor": 399 }
   },
   {
     "name": "discard.view.v",
@@ -790,127 +808,152 @@
   {
     "name": "set.menu",
     "argTypes": ["Message"],
-    "opcode": 156
+    "opcode": 156,
+    "minVersion": { "major": 2, "minor": 90 }
   },
   {
     "name": "set.menu.item",
     "argTypes": ["Message", "CtrlCode"],
-    "opcode": 157
+    "opcode": 157,
+    "minVersion": { "major": 2, "minor": 90 }
   },
   {
     "name": "submit.menu",
     "argTypes": [],
-    "opcode": 158
+    "opcode": 158,
+    "minVersion": { "major": 2, "minor": 90 }
   },
   {
     "name": "enable.item",
     "argTypes": ["CtrlCode"],
-    "opcode": 159
+    "opcode": 159,
+    "minVersion": { "major": 2, "minor": 90 }
   },
   {
     "name": "disable.item",
     "argTypes": ["CtrlCode"],
-    "opcode": 160
+    "opcode": 160,
+    "minVersion": { "major": 2, "minor": 90 }
   },
   {
     "name": "menu.input",
     "argTypes": [],
-    "opcode": 161
+    "opcode": 161,
+    "minVersion": { "major": 2, "minor": 90 }
   },
   {
     "name": "show.obj.v",
     "argTypes": ["Variable"],
-    "opcode": 162
+    "opcode": 162,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "open.dialogue",
     "argTypes": [],
-    "opcode": 163
+    "opcode": 163,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "close.dialogue",
     "argTypes": [],
-    "opcode": 164
+    "opcode": 164,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "mul.n",
     "argTypes": ["Variable", "Number"],
-    "opcode": 165
+    "opcode": 165,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "mul.v",
     "argTypes": ["Variable", "Variable"],
-    "opcode": 166
+    "opcode": 166,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "div.n",
     "argTypes": ["Variable", "Number"],
-    "opcode": 167
+    "opcode": 167,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "div.v",
     "argTypes": ["Variable", "Variable"],
-    "opcode": 168
+    "opcode": 168,
+    "minVersion": { "major": 2, "minor": 273 }
   },
   {
     "name": "close.window",
     "argTypes": [],
-    "opcode": 169
+    "opcode": 169,
+    "minVersion": { "major": 2, "minor": 440 }
   },
   {
     "name": "set.simple",
     "argTypes": [],
-    "opcode": 170
+    "opcode": 170,
+    "minVersion": { "major": 2, "minor": 440 }
   },
   {
     "name": "push.script",
     "argTypes": [],
-    "opcode": 171
+    "opcode": 171,
+    "minVersion": { "major": 2, "minor": 440 }
   },
   {
     "name": "pop.script",
     "argTypes": [],
-    "opcode": 172
+    "opcode": 172,
+    "minVersion": { "major": 2, "minor": 440 }
   },
   {
     "name": "hold.key",
     "argTypes": [],
-    "opcode": 173
+    "opcode": 173,
+    "minVersion": { "major": 2, "minor": 917 }
   },
   {
     "name": "set.pri.base",
     "argTypes": [],
-    "opcode": 174
+    "opcode": 174,
+    "minVersion": { "major": 2, "minor": 917 }
   },
   {
     "name": "discard.sound",
     "argTypes": [],
-    "opcode": 175
+    "opcode": 175,
+    "minVersion": { "major": 2, "minor": 936 }
   },
   {
     "name": "hide.mouse",
     "argTypes": [],
-    "opcode": 176
+    "opcode": 176,
+    "minVersion": { "major": 2, "minor": 936 }
   },
   {
     "name": "allow.menu",
     "argTypes": [],
-    "opcode": 177
+    "opcode": 177,
+    "minVersion": { "major": 2, "minor": 2086 }
   },
   {
     "name": "show.mouse",
     "argTypes": [],
-    "opcode": 178
+    "opcode": 178,
+    "minVersion": { "major": 2, "minor": 2086 }
   },
   {
     "name": "fence.mouse",
     "argTypes": [],
-    "opcode": 179
+    "opcode": 179,
+    "minVersion": { "major": 2, "minor": 2086 }
   },
   {
     "name": "mouse.posn",
     "argTypes": [],
-    "opcode": 180
+    "opcode": 180,
+    "minVersion": { "major": 2, "minor": 2086 }
   },
   {
     "name": "release.key",
@@ -921,48 +964,48 @@
     "name": "set.simple",
     "argTypes": ["String"],
     "opcode": 170,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "set.pri.base",
     "argTypes": ["Number"],
     "opcode": 174,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "discard.sound",
     "argTypes": ["Number"],
     "opcode": 175,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "hide.mouse",
     "argTypes": ["Number"],
     "opcode": 176,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "allow.menu",
     "argTypes": ["Number"],
     "opcode": 177,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "show.mouse",
     "argTypes": ["Number"],
     "opcode": 178,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "fence.mouse",
     "argTypes": ["Number", "Number", "Number", "Number"],
     "opcode": 179,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   },
   {
     "name": "mouse.posn",
     "argTypes": ["Number", "Number"],
     "opcode": 180,
-    "version": { "major": 3 }
+    "variantVersion": { "major": 3 }
   }
 ]
