@@ -131,10 +131,7 @@ export function getTestCommand(opcode: number): TestCommand | undefined {
   return testCommandsByOpcode[opcode];
 }
 
-export function getAGICommandByName(
-  name: string,
-  agiVersion: AGIVersion,
-): AGICommand | undefined {
+export function getAGICommandByName(name: string, agiVersion: AGIVersion): AGICommand | undefined {
   const candidates = agiCommandsByNameGrouped.get(name);
   if (!candidates || candidates.length === 0) {
     return undefined;

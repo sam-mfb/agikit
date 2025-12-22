@@ -117,7 +117,13 @@ function resolveNodes(
     };
     workingIndex.set(currentNode.address, commandNode);
     if (currentNode.agiCommand.name !== 'return' && currentNodeIndex + 1 < unresolvedNodes.length) {
-      commandNode.next = resolveNodes(unresolvedNodes, currentNodeIndex + 1, labels, workingIndex, logger);
+      commandNode.next = resolveNodes(
+        unresolvedNodes,
+        currentNodeIndex + 1,
+        labels,
+        workingIndex,
+        logger,
+      );
     }
     return commandNode;
   }
@@ -143,7 +149,13 @@ function resolveNodes(
     };
     workingIndex.set(currentNode.address, ifNode);
     if (currentNodeIndex + 1 < unresolvedNodes.length) {
-      ifNode.then = resolveNodes(unresolvedNodes, currentNodeIndex + 1, labels, workingIndex, logger);
+      ifNode.then = resolveNodes(
+        unresolvedNodes,
+        currentNodeIndex + 1,
+        labels,
+        workingIndex,
+        logger,
+      );
     }
 
     // insert a virtual goto at the end of the code for the skip target
